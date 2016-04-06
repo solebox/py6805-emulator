@@ -88,12 +88,15 @@ class Stack(object):
         self._sp += 1
         return value
 
-    def _get_pop_val(self):
-        value = self._stack[self._sp]
-        return value
+    def reset_stack_pointer(self, address):
+        self.sp = address
 
     def _set_push_val(self, value):
         self._stack[self._sp] = value
+
+    def _get_pop_val(self):
+        value = self._stack[self._sp]
+        return value
 
 
 def test_underflow():

@@ -4,6 +4,8 @@ from memory import Stack
 class Registers(object):
 
     def __init__(self):
+        self._address_size = 0xFFFF
+        self._general_register_size = 0xFF
         self._a = 0x0
         self._x = 0x0
         self._pc = 0x0
@@ -11,15 +13,28 @@ class Registers(object):
         self._stack = Stack(size=64, start=0x00FF)  # fixme find out real specs of stack
         self._sp = self._stack.sp
 
+    def is_valid_general_register_value(self, value):
+        if value not in range(0x0, self._general_register_size):
+            raise ValueError("value exceeding register size {}".format(hex(value)))
+        return True
+
+    def _is_valid_address(self, address):
+        if address not in range(0x0, self._address_size):
+            raise ValueError("address out of range {}".format(address))
+        return True
+
+    @property
+    def general_register_size(self):
+        return self._general_register_size
+
     @property
     def a(self):
         return self._a
 
     @a.setter
     def a(self, value):
-        if value not in range(0x0, 0xFF):
-            raise ValueError("pc should be 8 bit max")
-        self._a = value
+        if self.is_valid_general_register_value(value):
+            self._a = value
 
     @property
     def x(self):
@@ -27,9 +42,8 @@ class Registers(object):
 
     @x.setter
     def x(self, value):
-        if value not in range(0x0, 0xFF):
-            raise ValueError("pc should be 8 bit max")
-        self._x = value
+        if self.is_valid_general_register_value(value):
+            self._x = value
 
     @property
     def pc(self):
@@ -69,6 +83,10 @@ class Registers(object):
     def clear_flag(self, flag):
         self._CCR[flag] = 0x0
 
+    def update_flags(self, flag_dictionary):
+        for flag, value in flag_dictionary.items():
+            self._CCR[flag] = value
+
     def push(self, value):
         self._stack.push(value)
 
@@ -76,4 +94,4 @@ class Registers(object):
         return self._stack.pop()
 
     def reset_stack_pointer(self, address):
-        self._sp = address
+        self._stack.reset_stack_pointer(address)

@@ -7,14 +7,33 @@ class Commands(object):
     def __init__(self, state: Registers, memory: Memory):
         self._state = state
         self._memory = memory
+        self._address_size = 0xFFFF
+        self._register_size = 0xFF
 
     def nop(self):
         self._state.pc += 1
+
+    def __update_flags_for_add_op(self, target, value):
+        if self.__register_size(target) and self.__register_size(value):
+            result = (target + value) % 0xFF
+            half_result = result & 0x0F
+            half_target = result & 0x0F
+
+            c = 1 if result < target else 0
+            h = 1 if half_result < half_target else 0
+            n = (result & 0x80) >> 7
+            z = 0 if result else 1
+
+            self._state.update_flags({'C': c, 'H': h, 'N': n, 'Z': z})
+
+    def __register_size(self, value):
+        return self._state.is_valid_general_register_value(value)
 
     def add(self, value):
         """
             add to accumulator
         """
+        self.__update_flags_for_add_op(self._state.a, value)
         self._state.a += value
         self._state.pc += 2
 
@@ -22,154 +41,162 @@ class Commands(object):
         """
             add to the accumulator with carry
         """
-        #fixme - implement
-        pass
+        self.add(value)
+        self.add(self._state.ccr.get('C'))  # fixme - could work :)
+        self._state.pc -= 2  # compansating for the double add call (what a hack ;))
 
     def sub(self, value):
         """
             subtract from accumulator
         """
-        self._state.a -= value
+        result = self._state.a - value
+        negative = 1 if result < 0 else 0
+        zero = 0 if result else 1
+        carry = 1 if result < self._state.a else 0
+        self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
+        self._state.a = result
         self._state.pc += 2
 
-    def sbc(self, state, value):
+    def sbc(self, value):
         """
             suntract from accumulator with borrow
         """
-        #fixme - implement
-        pass
+        current_carry = self._state.ccr.get('C')
+        self.sub(value)
+        self.sub(current_carry)
+        self._state.pc -= 2  # compensating for double sub call
 
     def mul(self):
         """
             multiply the accumulator by index register (x)
         """
-        self._state.a *= self._state.x
+        self._state.a *= self._state.x  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def neg(self, address):
         """
             negate a memory location
         """
-        self._memory.negate(address)
+        self._memory.negate(address)  # fixme - need to add flag stuff
         self._state.pc += 3  # one byte for the negate opcode 2 more for the address
 
     def nega(self):
         """
             negate the accumulator
         """
-        self._state.a ^= 0xFF
+        self._state.a ^= 0xFF  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def negx(self):
         """
             negate the index register
         """
-        self._state.x ^= 0xFF
+        self._state.x ^= 0xFF  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def lda(self, address):
         """
             load the accumulator
         """
-        self._state.a = self._memory.read(address)
+        self._state.a = self._memory.read(address)  # fixme - need to add flag stuff
         self._state.pc += 3
 
     def ldx(self, address):
         """
             load the index register
         """
-        self._memory.write(address, self._state.x)
+        self._memory.write(address, self._state.x)  # fixme - need to add flag stuff
         self._state.pc += 3
 
     def sta(self, address):
         """
             store the accumulator
         """
-        self._memory.write(address, self._state.a)
+        self._memory.write(address, self._state.a)  # fixme - need to add flag stuff
         self._state.a += 3
 
     def stx(self, address):
         """
             store the index register
         """
-        self._memory.write(address, self._state.x)
+        self._memory.write(address, self._state.x)  # fixme - need to add flag stuff
         self._state.pc += 3
 
     def tax(self):
         """
             transfer the accumulator to the index register
         """
-        self._state.x = self._state.a
+        self._state.x = self._state.a  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def txa(self):
         """
             transfer the index register to the accumulator
         """
-        self._state.a = self._state.x
+        self._state.a = self._state.x  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def clr(self, address):
         """
             clear a memory location
         """
-        self._memory.clear_location(address)
+        self._memory.clear_location(address)  # fixme - need to add flag stuff
         self._state.pc += 3
 
     def clra(self):
         """
             clear the accumulator
         """
-        self._state.a = 0x0
+        self._state.a = 0x0  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def clrx(self):
         """
             clear the index register
         """
-        self._state.x = 0x0
+        self._state.x = 0x0  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def inc(self, address):
         """
             increment a memory location by one
         """
-        self._memory.increment(address)
+        self._memory.increment(address)  # fixme - need to add flag stuff
         self._state.pc += 3
 
     def inca(self):
         """
             increment the acuumulator by one
         """
-        self._state.a += 1
+        self._state.a += 1  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def incx(self):
         """
             increment the index register by one
         """
-        self._state.x += 1
+        self._state.x += 1  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def dec(self, address):
         """
             decrement a memory location by one
         """
-        self._memory.decrement(address)
+        self._memory.decrement(address)  # fixme - need to add flag stuff
         self._state.pc += 3
 
     def deca(self):
         """
             decrement accumulator by one
         """
-        self._state.a -= 1
+        self._state.a -= 1  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def decx(self):
         """
             decrement index register by one
         """
-        self._state.x -= 1
+        self._state.x -= 1  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def logical_and(self, value):
@@ -177,51 +204,67 @@ class Commands(object):
             logical and of the accumulator and operand
         """
         self._state.a &= value
+        z = 0 if self._state.a else 1
+        n = 0 if self._state.a > 0 else 1
+        self._state.update_flags({'N': n, 'Z': z})
         self._state.pc += 2
 
     def ora(self, value):
         """
             logical or of the accumulator and operand
         """
-        self._state.a |= value
+        self._state.a |= value  # fixme - need to add flag stuff
         self._state.pc += 2
 
     def eor(self, value):
         """
             exclusivve or of the accumulator and an operand
         """
-        self._state.a ^= value
+        self._state.a ^= value  # fixme - need to add flag stuff
         self._state.pc += 2
+
+    def _com(self, target, size):
+        target = (~target) % size  # artifacts of 2's compliment and dynamic sizes(meh)
+        carry = 1  # according to the doc its always turned into 1 , makes sense i guess...
+        negative = 1 if target < 0 else 0
+        zero = 0 if target else 1
+        self._state.update_flags({'C': carry, 'N': negative, 'Z': zero})
+        return target
 
     def com(self, address):
         """
-            get one's complement of a memory location
+            get one's complement of a memory location (the 'not' bitwise operation)
         """
-        # fixme - please implement
-        pass
+        value = self._memory.read(address)
+        value = self._com(value, self._address_size)
+        self._memory.write(address, value)
+        self._state.pc += 3
 
     def coma(self):
         """
             get ones complement of the accumulator
         """
-        # fixme - please implement
-        pass
+        value = self._com(self._state.a, self._register_size)
+        self._state.a = value
+        self._state.pc += 2
 
     def comx(self):
         """
             get ones complement of the index register
         """
-        # fixme -please implement
-        pass
+        value = self._com(self._state.a, self._register_size)
+        self._state.x = value
+        self._state.pc += 2
 
     def asl(self, address):
         """
             arithmetically shift a memory location left by one bit
         """
-        value = self._memory.read(address)
-        value = self._arithmetical_left_shift(value)
-        self._memory.write(address, value)
-        self._state.pc += 3
+        if self._state._is_valid_address(address):
+            value = self._memory.read(address)
+            value = self._arithmetical_left_shift(value)
+            self._memory.write(address, value)
+            self._state.pc += 3
 
     def asla(self):
         """
@@ -243,10 +286,11 @@ class Commands(object):
         """
             arithmetically shift a memory location right by one bit
         """
-        value = self._memory.read(address)
-        value = self._arithmetic_right_shift(value)
-        self._memory.write(address, value)
-        self._state.pc += 3
+        if self._state._is_valid_address(address):
+            value = self._memory.read(address)
+            value = self._arithmetic_right_shift(value)
+            self._memory.write(address, value)
+            self._state.pc += 3
 
     def asra(self):
         """
@@ -268,10 +312,11 @@ class Commands(object):
         """
             logically shift a memory location left by one bit
         """
-        value = self._memory.read(address)
-        value = self._logical_left_shift(value)
-        self._memory.write(address, value)
-        self._state.pc += 3
+        if self._state._is_valid_address(address):
+            value = self._memory.read(address)
+            value = self._logical_left_shift(value)
+            self._memory.write(address, value)
+            self._state.pc += 3
 
     def lsla(self):
         """
@@ -293,10 +338,11 @@ class Commands(object):
         """
             LSR logically shift a memory location right by one bit
         """
-        value = self._memory.read(address)
-        value = self._logical_right_shift(value)
-        self._memory.write(address, value)
-        self._state.pc += 3
+        if self._state._is_valid_address(address):
+            value = self._memory.read(address)
+            value = self._logical_right_shift(value)
+            self._memory.write(address, value)
+            self._state.pc += 3
 
     def lsra(self):
         """
@@ -364,28 +410,28 @@ class Commands(object):
         """
             BIT bit test the accumulator and set the N or Z flags
         """
-        self._test(self._state.a)
+        self._test(self._state.a)  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def cmp(self, value):
         """
             CMP compare an operand to the accumulator
         """
-        self._cmp(self._state.a, value)
+        self._cmp(self._state.a, value)  # fixme - need to add flag stuff
         self._state.pc += 2
 
     def cpx(self, value):
         """
             CPX compare an operand to the index register
         """
-        self._cmp(self._state.x, value)
+        self._cmp(self._state.x, value)  # fixme - need to add flag stuff
         self._state.pc += 2
 
     def tst(self, address):
         """
             TST test a memory location and set the N or Z flags
         """
-        value = self._memory.read(address)
+        value = self._memory.read(address)  # fixme - need to add flag stuff
         self._test(value)
         self._state.pc += 3
 
@@ -394,14 +440,14 @@ class Commands(object):
             TSTA test the accumulator and set the N or Z flags
         """
         value = self._state.a
-        self._test(value)
+        self._test(value)  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def testx(self):
         """
             TSTX test the index register and set the N or Z flags
         """
-        self._test(self._state.x)
+        self._test(self._state.x)  # fixme - need to add flag stuff
         self._state.pc += 1
 
     def bcc(self, address_offset):
@@ -679,30 +725,55 @@ class Commands(object):
         return value
 
     def _logical_right_shift(self, value):
-        value >>= 1
-        return value
+        result = value >> 1
+        negative = 0  # doc
+        zero = 0 if value else 1
+        carry = 1 if result < value else 0
+        self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
+        return result
 
     def _arithmetical_left_shift(self, value):
-        return self._left_shift(value)
+        result = self._left_shift(value)
+        negative = 1 if result < 0 else 0
+        zero = 0 if result else 1
+        carry = 1 if result < value else 0
+        self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
+        return result
 
     def _logical_left_shift(self, value):
-        return self._left_shift(value)
+        result = self._left_shift(value)
+        negative = 0  # doc said it , what are you looking at me for?!
+        zero = 0 if result else 1
+        carry = 1 if result < value else 0
+        self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
+        return result
 
     def _rol(self, value, rotate_by):
         """
             bitwise rotate left
         """
+
         max_bits = 8
-        return (value << rotate_by % max_bits) & (2 ** max_bits - 1) | \
+        result = (value << rotate_by % max_bits) & (2 ** max_bits - 1) | \
                ((value & (2 ** max_bits - 1)) >> (max_bits - (rotate_by % max_bits)))
+        negative = 1 if result < 0 else 0
+        zero = 0 if result else 1
+        carry = 1 if result < value else 0
+        self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
+        return result
 
     def _ror(self, value, rotate_by):
         """
             bitwise rotate right
         """
         max_bits = 8
-        return ((value & (2 ** max_bits - 1)) >> rotate_by % max_bits) | \
+        result = ((value & (2 ** max_bits - 1)) >> rotate_by % max_bits) | \
                (value << (max_bits - (rotate_by % max_bits)) & (2 ** max_bits - 1))
+        negative = 1 if result < 0 else 0
+        zero = 0 if result else 1
+        carry = 1 if result < value else 0
+        self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
+        return result
 
     def _test(self, value):
         if value == 0:
