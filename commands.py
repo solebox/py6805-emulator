@@ -7,14 +7,15 @@ class Commands(object):
     def __init__(self, state: Registers, memory: Memory):
         self._state = state
         self._memory = memory
-        self._address_size = 0xFFFF
-        self._register_size = 0xFF
+        self._address_size = self._memory.address_size
+        self._register_size = self._state.general_register_size     # assuming opcode size and rgeneral
+                                                                    #  register size are always the same
 
     def nop(self):
         self._state.pc += 1
 
     def __update_flags_for_add_op(self, target, value):
-        if self.__register_size(target) and self.__register_size(value):
+        if self.__valid_register_size(target) and self.__valid_register_size(value):
             result = (target + value) % 0xFF
             half_result = result & 0x0F
             half_target = result & 0x0F
@@ -26,7 +27,7 @@ class Commands(object):
 
             self._state.update_flags({'C': c, 'H': h, 'N': n, 'Z': z})
 
-    def __register_size(self, value):
+    def __valid_register_size(self, value):
         return self._state.is_valid_general_register_value(value)
 
     def add(self, value):

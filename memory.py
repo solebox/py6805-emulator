@@ -7,6 +7,7 @@ class Memory(object):
     def __init__(self):
         self._ram = range(0x0, 0x20)
         self._rom = range(0x100, )
+        self.address_size = 0xFFFF
         self._memory = {}
 
     def read(self, address):

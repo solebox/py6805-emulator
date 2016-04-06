@@ -5,7 +5,7 @@ class Registers(object):
 
     def __init__(self):
         self._address_size = 0xFFFF
-        self._general_register_size = 0xFF
+        self.general_register_size = 0xFF
         self._a = 0x0
         self._x = 0x0
         self._pc = 0x0
@@ -14,7 +14,7 @@ class Registers(object):
         self._sp = self._stack.sp
 
     def is_valid_general_register_value(self, value):
-        if value not in range(0x0, self._general_register_size):
+        if value not in range(0x0, self.general_register_size):
             raise ValueError("value exceeding register size {}".format(hex(value)))
         return True
 
@@ -25,7 +25,7 @@ class Registers(object):
 
     @property
     def general_register_size(self):
-        return self._general_register_size
+        return self.general_register_size
 
     @property
     def a(self):
