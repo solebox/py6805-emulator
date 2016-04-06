@@ -411,28 +411,28 @@ class Commands(object):
         """
             BIT bit test the accumulator and set the N or Z flags
         """
-        self._test(self._state.a)  # fixme - need to add flag stuff
+        self._test(self._state.a)
         self._state.pc += 1
 
     def cmp(self, value):
         """
             CMP compare an operand to the accumulator
         """
-        self._cmp(self._state.a, value)  # fixme - need to add flag stuff
+        self._cmp(self._state.a, value)
         self._state.pc += 2
 
     def cpx(self, value):
         """
             CPX compare an operand to the index register
         """
-        self._cmp(self._state.x, value)  # fixme - need to add flag stuff
+        self._cmp(self._state.x, value)
         self._state.pc += 2
 
     def tst(self, address):
         """
             TST test a memory location and set the N or Z flags
         """
-        value = self._memory.read(address)  # fixme - need to add flag stuff
+        value = self._memory.read(address)
         self._test(value)
         self._state.pc += 3
 
@@ -441,14 +441,14 @@ class Commands(object):
             TSTA test the accumulator and set the N or Z flags
         """
         value = self._state.a
-        self._test(value)  # fixme - need to add flag stuff
+        self._test(value)
         self._state.pc += 1
 
     def testx(self):
         """
             TSTX test the index register and set the N or Z flags
         """
-        self._test(self._state.x)  # fixme - need to add flag stuff
+        self._test(self._state.x)
         self._state.pc += 1
 
     def bcc(self, address_offset):
@@ -785,11 +785,12 @@ class Commands(object):
             self._state.clear_flag('Z')
             self._state.clear_flag('N')
 
-    def _cmp(self, value, operand):
-        if value == operand:
-            self._state.set_flag('Z')
-        else:
-            self._state.clear_flag('Z')
+    def _cmp(self, register, operand):
+        result = (register - operand) % self._register_size
+        zero = 0 if result else 1
+        negative = 1 if result < 0 else 1
+        carry = 1 if result < register else 1
+        self._state.update_flags({'Z': zero, 'N': negative, 'C': carry})
 
     def _branch(self, address):
         self._state.pc = address
