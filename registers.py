@@ -5,7 +5,7 @@ class Registers(object):
 
     def __init__(self):
         self._address_size = 0xFFFF
-        self.general_register_size = 0xFF
+        self._general_register_size = 0xFF
         self._a = 0x0
         self._x = 0x0
         self._pc = 0x0
@@ -13,19 +13,28 @@ class Registers(object):
         self._stack = Stack(size=64, start=0x00FF)  # fixme find out real specs of stack
         self._sp = self._stack.sp
 
+    def __str__(self):
+        flags = {'C': self._CCR['C'], 'Z': self._CCR['Z'], 'N': self._CCR['N'], 'I': self._CCR['I'], 'H': self._CCR['H']}
+        string_representation = """
+            a: {a:#0{register_hex_length}x}, x: {x:#0{register_hex_length}x}
+            flags: {flags}
+            pc: {pc:#0{address_hex_length}x}, sp: {sp:#0{address_hex_length}x}
+        """.format(a=self._a, x=self._x, flags=flags, pc=self._pc, sp=self._sp, address_hex_length=6, register_hex_length=4)
+        return string_representation
+
     def is_valid_general_register_value(self, value):
-        if value not in range(0x0, self.general_register_size):
+        if value not in range(0x0, self.general_register_size+1):
             raise ValueError("value exceeding register size {}".format(hex(value)))
         return True
 
     def _is_valid_address(self, address):
-        if address not in range(0x0, self._address_size):
+        if address not in range(0x0, self._address_size+1):
             raise ValueError("address out of range {}".format(address))
         return True
 
     @property
     def general_register_size(self):
-        return self.general_register_size
+        return self._general_register_size
 
     @property
     def a(self):

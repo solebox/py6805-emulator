@@ -11,14 +11,23 @@ class Commands(object):
         self._register_size = self._state.general_register_size     # assuming opcode size and rgeneral
                                                                     #  register size are always the same
 
+    def execute_command(self, command, *args):
+        if command.lower() == 'and':
+            self.logical_and(*args)
+        else:
+            method = getattr(self, command.lower())
+            method(*args)
+
     def nop(self):
         self._state.pc += 1
 
     def __update_flags_for_add_op(self, target, value):
         if self.__valid_register_size(target) and self.__valid_register_size(value):
-            result = (target + value) % 0xFF
+            result = (target + value) % (0xFF+1)
+            print("adding {}".format(hex(value)))
+            print("result: {}".format(result, target))
             half_result = result & 0x0F
-            half_target = result & 0x0F
+            half_target = target & 0x0F
 
             c = 1 if result < target else 0
             h = 1 if half_result < half_target else 0
@@ -35,15 +44,16 @@ class Commands(object):
             add to accumulator
         """
         self.__update_flags_for_add_op(self._state.a, value)
-        self._state.a += value
+
+        self._state.a = (self._state.a + value) % (self._state.general_register_size+1)
         self._state.pc += 2
 
     def adc(self, value):
         """
             add to the accumulator with carry
         """
-        self.add(value)
         self.add(self._state.ccr.get('C'))  # fixme - could work :)
+        self.add(value)
         self._state.pc -= 2  # compansating for the double add call (what a hack ;))
 
     def sub(self, value):
@@ -786,7 +796,7 @@ class Commands(object):
             self._state.clear_flag('N')
 
     def _cmp(self, register, operand):
-        result = (register - operand) % self._register_size
+        result = (register - operand) % (self._state.general_register_size+1)
         zero = 0 if result else 1
         negative = 1 if result < 0 else 1
         carry = 1 if result < register else 1
