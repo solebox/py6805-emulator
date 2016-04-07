@@ -24,8 +24,6 @@ class Commands(object):
     def __update_flags_for_add_op(self, target, value):
         if self.__valid_register_size(target) and self.__valid_register_size(value):
             result = (target + value) % (0xFF+1)
-            print("adding {}".format(hex(value)))
-            print("result: {}".format(result, target))
             half_result = result & 0x0F
             half_target = target & 0x0F
 
@@ -52,7 +50,7 @@ class Commands(object):
         """
             add to the accumulator with carry
         """
-        self.add(self._state.ccr.get('C'))  # fixme - could work :)
+        self.add(self._state.ccr.get('C'))
         self.add(value)
         self._state.pc -= 2  # compansating for the double add call (what a hack ;))
 
@@ -60,10 +58,12 @@ class Commands(object):
         """
             subtract from accumulator
         """
-        result = self._state.a - value
-        negative = 1 if result < 0 else 0
+        bits_in_general_reg = len(bin(self._state.general_register_size)) - 2
+        result = (self._state.a - value) % (self._state.general_register_size+1)
+        print("result: {}".format(result))
+        negative = 1 if result >> (bits_in_general_reg - 1) else 0
         zero = 0 if result else 1
-        carry = 1 if result < self._state.a else 0
+        carry = 1 if result > self._state.a else 0
         self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
         self._state.a = result
         self._state.pc += 2

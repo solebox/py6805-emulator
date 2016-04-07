@@ -44,7 +44,9 @@ if __name__ == "__main__":
     opcode_parser = OpCodeParser(commands)
     opcode_parser.parse(buffer)
     print(registers)
+
     commands.add(0x1)
-    commands.add(0xFF)
-    commands.adc(0x01)
+    commands.sub(0x2)
+
+
     print(registers)
