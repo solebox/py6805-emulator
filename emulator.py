@@ -18,7 +18,7 @@ class OpCodeParser(object):
         # print(opcodes)
         # opcodes = {
         #     0x01: {'command': commands.nop, 'operands': []},
-        #     0xF9: {'command': commands.adc, 'operands': [self.OPERAND]},
+        #     0xF9: {'command': commands.adc, 'operands': [self.OPERAND]},u
         #     0xDB: {'command': commands.add, 'operands': [self.OPERAND]},
         # }
         return opcodes

@@ -1,6 +1,6 @@
 import inspect
 import random
-
+import struct
 
 class Memory(object):
 
@@ -9,6 +9,20 @@ class Memory(object):
         self._rom = range(0x100, )
         self.address_size = 0xFFFF
         self._memory = {}
+
+    def write_buffer_to_memory(self, start_address, buffer):
+        if type(start_address) == bytes:
+            address = struct.unpack(">H", start_address)[0] # big endian 2 bytes address
+        elif type(start_address) == str:
+            address = int(start_address, 16)
+        elif type(start_address) == int:
+            address = start_address
+        else:
+            raise ValueError("invalid address format")
+
+        for value in buffer:
+            self.write(address, value)
+            address += 1
 
     def read(self, address):
         value = self._memory.get(address, 0)
