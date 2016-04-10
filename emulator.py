@@ -84,6 +84,3 @@ if __name__ == "__main__":
     print(registers)
     opcode_parser.step(fake=True)
     print(registers)
-
-
-
