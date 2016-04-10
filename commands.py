@@ -15,7 +15,7 @@ class Commands(object):
         command = command.lower()
         if command == 'and':
             self.logical_and(*args)
-        elif command in ['bset', 'bclr', 'brset', 'brclear']:
+        elif command in ['bset', 'bclr', 'brset', 'brclear', 'jsr']:
             method = getattr(self, command)
             method(opcode, *args)
         else:
@@ -697,8 +697,10 @@ class Commands(object):
             branch to subroutine and save return address on stack
         """
         self._state.push(self._state.pc)
-        self._branch(address_offset)
+        self._state._sp -= 1
         self._state.pc += 2
+        self._branch(address_offset)
+
 
     # single bit operations
 
@@ -751,12 +753,12 @@ class Commands(object):
         self._state.pc += 2  # one byte for the jmp and another 2 bytes for the address
         self._state.pc = address
 
-    def jsr(self, address):
+    def jsr(self, opcode, address):
         """
             JSR jump to subroutine and save return address on stack
         """
+        self._state.pc += 2 # fixme - address can be n = 1,2,3
         self._state.push(self._state.pc)
-        self._state.pc += 2
         self._state.pc = address
 
     def rts(self):
@@ -916,8 +918,8 @@ class Commands(object):
         carry = 1 if result < register else 1
         self._state.update_flags({'Z': zero, 'N': negative, 'C': carry})
 
-    def _branch(self, address):
-        self._state.pc = address
+    def _branch(self, relative_address):
+        self._state.pc += relative_address
 
     def _left_shift(self, value):
         value <<= 1

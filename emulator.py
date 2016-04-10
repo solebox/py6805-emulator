@@ -1,5 +1,7 @@
 import struct
 
+import re
+
 from commands import Commands
 from memory import Memory
 from registers import Registers
@@ -77,6 +79,8 @@ class OpCodeParser(object):
             lines = input_file.readlines()
             for line in lines:
                 line = line.rstrip("\n")
+                line = re.sub("\s+$", "", line)
+                line = re.sub(r"\/\/.+$", "", line)  # support for comments, fuck yea!
                 mnemon, op, argument_sizes = line.split(",")
                 argument_sizes = argument_sizes.split("|")
                 argument_sizes = [int(argument_size) for argument_size in argument_sizes]
@@ -91,7 +95,7 @@ if __name__ == "__main__":
     registers = Registers()
     memory = Memory()
     commands = Commands(registers, memory)
-    rom = b"\xfb\x02\xfb\x02\xf0\x02\x46"
+    rom = b"\xfb\x20"
     opcode_parser = OpCodeParser(rom, commands, memory, registers)
 
     print(registers)

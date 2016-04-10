@@ -78,7 +78,11 @@ INC   ,0x7C ,1
 INCA  ,0x4C ,0
 INCX  ,0x5C ,0
 JMP   ,0xFC ,1
-JSR   ,0xFD ,1
+JSR   ,0xBD ,1 // DIR dd    direct mode
+JSR   ,0xCD ,2 // EXT hh ll extended mode
+JSR   ,0xDD ,2 // IX2 ee ff Indexed, 16-bit offset addressing mode
+JSR   ,0xED ,1 // IX1 ff    Indexed, 8-bit offset addressing mode
+JSR   ,0xFD ,0 // IX        Indexed, no offset addressing mode          
 LDA   ,0xF6 ,1
 LDX   ,0xFE ,1
 LSL   ,0x78 ,1
