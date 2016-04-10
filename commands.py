@@ -11,11 +11,15 @@ class Commands(object):
         self._register_size = self._state.general_register_size     # assuming opcode size and rgeneral
                                                                     #  register size are always the same
 
-    def execute_command(self, command, *args):
-        if command.lower() == 'and':
+    def execute_command(self, opcode, command, *args):
+        command = command.lower()
+        if command == 'and':
             self.logical_and(*args)
+        elif command in ['bset', 'bclr', 'brset', 'brclear']:
+            method = getattr(self, command)
+            method(opcode, *args)
         else:
-            method = getattr(self, command.lower())
+            method = getattr(self, command)
             method(*args)
 
     def nop(self):
@@ -36,6 +40,16 @@ class Commands(object):
 
     def __valid_register_size(self, value):
         return self._state.is_valid_general_register_value(value)
+
+    def _get_flag_change(self, before, after, wrap_type):
+        bits_in_general_reg = len(bin(self._state.general_register_size)) - 2
+        negative = 1 if after >> (bits_in_general_reg - 1) else 0
+        zero = 0 if after else 1
+        if wrap_type == "underflow":
+             carry = 1 if after > before else 0
+        else:
+             carry = 1 if after < before else 0
+        return {'N': negative, 'Z': zero, 'C': carry}
 
     def add(self, value):
         """
@@ -61,9 +75,11 @@ class Commands(object):
         bits_in_general_reg = len(bin(self._state.general_register_size)) - 2
         result = (self._state.a - value) % (self._state.general_register_size+1)
         print("result: {}".format(result))
-        negative = 1 if result >> (bits_in_general_reg - 1) else 0
-        zero = 0 if result else 1
-        carry = 1 if result > self._state.a else 0
+        # negative = 1 if result >> (bits_in_general_reg - 1) else 0
+        # zero = 0 if result else 1
+        # carry = 1 if result > self._state.a else 0
+        flags = self._get_flag_change(value, result, "underflow")
+        negative, zero, carry = flags['N'], flags['Z'], flags['C']
         self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
         self._state.a = result
         self._state.pc += 2
@@ -79,135 +95,198 @@ class Commands(object):
 
     def mul(self):
         """
+            doesnt exist in 6805 microprocessor opcodes , maybe just for younger family members
             multiply the accumulator by index register (x)
         """
-        self._state.a *= self._state.x  # fixme - need to add flag stuff
+        self._state.a *= self._state.x  # fixme - need to look for opcode and add flag stuff
         self._state.pc += 1
+
+    def _neg(self, value):
+        result = value ^ 0xFF % (self._state.general_register_size+1)
+        bits_in_general_reg = len(bin(self._state.general_register_size)) - 2
+        # negative = 1 if result >> (bits_in_general_reg - 1) else 0
+        # zero = 0 if result else 1
+        # carry = 1 if result > value else 0
+        flags = self._get_flag_change(value, result, "overflow")
+        negative, zero, carry = flags['N'], flags['Z'], flags['C']
+        self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
+        return result
 
     def neg(self, address):
         """
             negate a memory location
         """
-        self._memory.negate(address)  # fixme - need to add flag stuff
-        self._state.pc += 3  # one byte for the negate opcode 2 more for the address
+        value = self._memory.read(address)
+        value = self._neg(value)
+        self._memory.write(address, value)
+        self._state.pc += 2  # one byte for the negate opcode 2 more for the address
 
     def nega(self):
         """
             negate the accumulator
         """
-        self._state.a ^= 0xFF  # fixme - need to add flag stuff
+        value = self._neg(self._state.a)
+        self._state.a = value
         self._state.pc += 1
 
     def negx(self):
         """
             negate the index register
         """
-        self._state.x ^= 0xFF  # fixme - need to add flag stuff
+
+        value = self._neg(self._state.x)
+        self._state.x = value
         self._state.pc += 1
 
     def lda(self, address):
         """
             load the accumulator
         """
-        self._state.a = self._memory.read(address)  # fixme - need to add flag stuff
-        self._state.pc += 3
+        bits_in_general_reg = len(bin(self._state.general_register_size)) - 2
+        self._state.a = self._memory.read(address)
+        result = self._state.a
+        flags = self._get_flag_change(result, result, "overflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
+        self._state.pc += 2
 
     def ldx(self, address):
         """
             load the index register
         """
-        self._memory.write(address, self._state.x)  # fixme - need to add flag stuff
-        self._state.pc += 3
+        self._memory.write(address, self._state.x)
+        result = self._state.x
+        flags = self._get_flag_change(result, result, "overflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
+        self._state.pc += 2
 
     def sta(self, address):
         """
             store the accumulator
         """
-        self._memory.write(address, self._state.a)  # fixme - need to add flag stuff
-        self._state.a += 3
+        self._memory.write(address, self._state.a)
+        result = self._state.a
+        flags = self._get_flag_change(result, result, "overflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
+        self._state.a += 2
 
     def stx(self, address):
         """
             store the index register
         """
-        self._memory.write(address, self._state.x)  # fixme - need to add flag stuff
-        self._state.pc += 3
+        self._memory.write(address, self._state.x)
+        result = self._state.x
+        flags = self._get_flag_change(result, result, "overflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
+        self._state.pc += 2
 
     def tax(self):
         """
             transfer the accumulator to the index register
         """
-        self._state.x = self._state.a  # fixme - need to add flag stuff
+        self._state.x = self._state.a
         self._state.pc += 1
 
     def txa(self):
         """
             transfer the index register to the accumulator
         """
-        self._state.a = self._state.x  # fixme - need to add flag stuff
+        self._state.a = self._state.x
         self._state.pc += 1
 
     def clr(self, address):
         """
             clear a memory location
         """
-        self._memory.clear_location(address)  # fixme - need to add flag stuff
-        self._state.pc += 3
+        self._memory.write(address, 0x0)
+        self._state.update_flags({'N': 0, 'Z': 1})
+        self._state.pc += 2
 
     def clra(self):
         """
             clear the accumulator
         """
-        self._state.a = 0x0  # fixme - need to add flag stuff
+        self._state.a = 0x0
+        self._state.update_flags({'N': 0, 'Z': 1})
         self._state.pc += 1
 
     def clrx(self):
         """
             clear the index register
         """
-        self._state.x = 0x0  # fixme - need to add flag stuff
+        self._state.x = 0x0
+        self._state.update_flags({'N': 0, 'Z': 1})
         self._state.pc += 1
 
     def inc(self, address):
         """
             increment a memory location by one
         """
-        self._memory.increment(address)  # fixme - need to add flag stuff
-        self._state.pc += 3
+        value = self._memory.read(address)
+        result = (value + 1) & 0xFF
+        flags = self._get_flag_change(result, result, "overflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
+        self._memory.write(address, result)
+        self._state.pc += 2
 
     def inca(self):
         """
             increment the acuumulator by one
         """
-        self._state.a += 1  # fixme - need to add flag stuff
+        result = self._state.a + 1
+        flags = self._get_flag_change(result, result, "overflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
+        self._state.a = result
         self._state.pc += 1
 
     def incx(self):
         """
             increment the index register by one
         """
-        self._state.x += 1  # fixme - need to add flag stuff
+        result = self._state.x + 1
+        flags = self._get_flag_change(result, result, "overflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
+        self._state.x = result
         self._state.pc += 1
 
     def dec(self, address):
         """
             decrement a memory location by one
         """
-        self._memory.decrement(address)  # fixme - need to add flag stuff
-        self._state.pc += 3
+        value = self._memory.read(address)
+        result = (value - 1) & 0xFF
+        flags = self._get_flag_change(result, result, "underflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
+        self._memory.write(address, result)
+        self._state.pc += 2
 
     def deca(self):
         """
             decrement accumulator by one
         """
-        self._state.a -= 1  # fixme - need to add flag stuff
+        result = self._state.a - 1
+        flags = self._get_flag_change(result, result, "underflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
+        self._state.a = result
         self._state.pc += 1
 
     def decx(self):
         """
             decrement index register by one
         """
-        self._state.x -= 1  # fixme - need to add flag stuff
+        result = self._state.x - 1
+        flags = self._get_flag_change(result, result, "underflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
+        self._state.x = result
         self._state.pc += 1
 
     def logical_and(self, value):
@@ -215,30 +294,36 @@ class Commands(object):
             logical and of the accumulator and operand
         """
         self._state.a &= value
-        z = 0 if self._state.a else 1
-        n = 0 if self._state.a > 0 else 1
-        self._state.update_flags({'N': n, 'Z': z})
+        flags = self._get_flag_change(self._state.a, self._state.a, "underflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
         self._state.pc += 2
 
     def ora(self, value):
         """
             logical or of the accumulator and operand
         """
-        self._state.a |= value  # fixme - need to add flag stuff
+        self._state.a |= value
+        flags = self._get_flag_change(self._state.a, self._state.a, "underflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
         self._state.pc += 2
 
     def eor(self, value):
         """
             exclusivve or of the accumulator and an operand
         """
-        self._state.a ^= value  # fixme - need to add flag stuff
+        self._state.a ^= value
+        flags = self._get_flag_change(self._state.a, self._state.a, "underflow")
+        negative, zero = flags['N'], flags['Z']
+        self._state.update_flags({'N': negative, 'Z': zero})
         self._state.pc += 2
 
     def _com(self, target, size):
         target = (~target) % size  # artifacts of 2's compliment and dynamic sizes(meh)
         carry = 1  # according to the doc its always turned into 1 , makes sense i guess...
-        negative = 1 if target < 0 else 0
-        zero = 0 if target else 1
+        flags = self._get_flag_change(self._state.a, self._state.a, "underflow")
+        negative, zero = flags['N'], flags['Z']
         self._state.update_flags({'C': carry, 'N': negative, 'Z': zero})
         return target
 
@@ -249,7 +334,7 @@ class Commands(object):
         value = self._memory.read(address)
         value = self._com(value, self._address_size)
         self._memory.write(address, value)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def coma(self):
         """
@@ -257,7 +342,7 @@ class Commands(object):
         """
         value = self._com(self._state.a, self._register_size)
         self._state.a = value
-        self._state.pc += 2
+        self._state.pc += 1
 
     def comx(self):
         """
@@ -265,7 +350,7 @@ class Commands(object):
         """
         value = self._com(self._state.a, self._register_size)
         self._state.x = value
-        self._state.pc += 2
+        self._state.pc += 1
 
     def asl(self, address):
         """
@@ -275,7 +360,7 @@ class Commands(object):
             value = self._memory.read(address)
             value = self._arithmetical_left_shift(value)
             self._memory.write(address, value)
-            self._state.pc += 3
+            self._state.pc += 2
 
     def asla(self):
         """
@@ -301,7 +386,7 @@ class Commands(object):
             value = self._memory.read(address)
             value = self._arithmetic_right_shift(value)
             self._memory.write(address, value)
-            self._state.pc += 3
+            self._state.pc += 2
 
     def asra(self):
         """
@@ -327,7 +412,7 @@ class Commands(object):
             value = self._memory.read(address)
             value = self._logical_left_shift(value)
             self._memory.write(address, value)
-            self._state.pc += 3
+            self._state.pc += 2
 
     def lsla(self):
         """
@@ -353,7 +438,7 @@ class Commands(object):
             value = self._memory.read(address)
             value = self._logical_right_shift(value)
             self._memory.write(address, value)
-            self._state.pc += 3
+            self._state.pc += 2
 
     def lsra(self):
         """
@@ -378,7 +463,7 @@ class Commands(object):
         value = self._memory.read(address)
         value = self._rol(value, 1)
         self._memory.write(address, value)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def rola(self):
         """
@@ -401,7 +486,7 @@ class Commands(object):
         value = self._memory.read(address)
         value = self._ror(value, 1)
         self._memory.write(address, value)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def rora(self):
         """
@@ -444,7 +529,7 @@ class Commands(object):
         """
         value = self._memory.read(address)
         self._test(value)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def tsta(self):
         """
@@ -454,7 +539,7 @@ class Commands(object):
         self._test(value)
         self._state.pc += 1
 
-    def testx(self):
+    def tstx(self):
         """
             TSTX test the index register and set the N or Z flags
         """
@@ -467,7 +552,7 @@ class Commands(object):
         """
         if self._state.ccr.get('C') == 0:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bcs(self, address_offset):
         """
@@ -475,7 +560,7 @@ class Commands(object):
         """
         if self._state.ccr.get('C') == 1:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def beq(self, address_offset):
         """
@@ -483,7 +568,7 @@ class Commands(object):
         """
         if self._state.ccr.get('Z') == 0:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bne(self, address_offset):
         """
@@ -491,7 +576,7 @@ class Commands(object):
         """
         if self._state.ccr.get('Z') == 1:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bhcc(self, address_offset):
         """
@@ -499,7 +584,7 @@ class Commands(object):
         """
         if self._state.ccr.get('H') == 0:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bhcs(self, address_offset):
         """
@@ -507,7 +592,7 @@ class Commands(object):
         """
         if self._state.ccr.get('H') == 1:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bhi(self, address_offset):
         """
@@ -518,7 +603,7 @@ class Commands(object):
 
         if c_flag == 0 or z_flag == 0:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bhs(self, address_offset):
         """
@@ -527,7 +612,7 @@ class Commands(object):
         if self._state.ccr.get('H') == 1:
             self._branch(address_offset)
 
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bls(self, address_offset):
         """
@@ -539,7 +624,7 @@ class Commands(object):
         if c_flag or z_flag:
             self._branch(address_offset)
 
-        self._state.pc += 3
+        self._state.pc += 2
 
     def blo(self, address_offset):
         """
@@ -547,7 +632,7 @@ class Commands(object):
         """
         if self._state.ccr.get('C') == 1:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bmi(self, address_offset):
         """
@@ -555,7 +640,7 @@ class Commands(object):
         """
         if self._state.ccr.get('N') == 1:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bpl(self, address_offset):
         """
@@ -563,7 +648,7 @@ class Commands(object):
         """
         if self._state.ccr.get('N') == 0:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bmc(self, address_offset):
         """
@@ -571,7 +656,7 @@ class Commands(object):
         """
         if self._state.ccr.get('I') == 0:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bms(self, address_offset):
         """
@@ -579,7 +664,7 @@ class Commands(object):
         """
         if self._state.ccr.get('I') == 1:
             self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     # special branches
 
@@ -588,26 +673,28 @@ class Commands(object):
             branch if IRQ pin is high
         """
         #fixme implement
+        self._state.pc += 2
 
     def bil(self, address_offset):
         """
             branch if IRQ pin is low
         """
         # fixme implement
+        self._state.pc += 2
 
     def bra(self, address_offset):
         """
             branch always
         """
         self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     def brn(self, address_offset):
         """
             branch never ( another nop? )
         """
         # fixme wtf
-        self._state.pc += 3
+        self._state.pc += 2
 
     def bsr(self, address_offset):
         """
@@ -615,40 +702,57 @@ class Commands(object):
         """
         self._state.push(self._state.pc)
         self._branch(address_offset)
-        self._state.pc += 3
+        self._state.pc += 2
 
     # single bit operations
 
-    def bclr(self, bit):
+    def bclr(self, opcode, address):
         """
             clear the designated memory bit
         """
-        #fixme - wat?!
+        bit = (opcode & 0xE) / 2
+        value = self._memory.read(address)
+        mask = (1 << bit) ^ 0xFF
+        value &= mask
+        self._memory.write(address, value)
+        self._state.pc += 2
 
-    def bset(self, bit):
+    def bset(self, opcode, address):
         """
             set the designated memory bit
         """
-        # fixme - ffs
+        bit = (opcode & 0xE) / 2
+        value = self._memory.read(address)
+        mask = (1 << bit)
+        value |= mask
+        self._memory.write(address, value)
+        self._state.pc += 2
 
-    def brclr(self, bit, address_offset):
+    def brclr(self, opcode, value, address):
         """
             branch if the designated memory bit is clear
         """
-        # fixme - come on! wtf is a designated mem bit? i need to rtfm
+        bit = (opcode & 0x0E) / 2
+        mask = (1 << bit)
+        address = self._state.pc + address if (value & mask) == 0 else self._state.pc
+        self._state.pc = address
 
-    def brset(self, bit, address_offset):
+    def brset(self, opcode, value, address_offset):
         """
             branch if the designated memory bit is set
         """
-        # fixme - ok now this is just ridiculous
+        bit = (opcode & 0x0E) / 2
+        address = self._state.pc + address_offset
+        mask = (1 << bit)
+        address = self._state.pc + address_offset if (value & mask) != 0 else self._state.pc
+        self._state.pc = address
 
     # jumps and returns
     def jmp(self, address):
         """
             JMP jumpt to specified address
         """
-        self._state.pc += 3  # one byte for the jmp and another 2 bytes for the address
+        self._state.pc += 2  # one byte for the jmp and another 2 bytes for the address
         self._state.pc = address
 
     def jsr(self, address):
@@ -656,7 +760,7 @@ class Commands(object):
             JSR jump to subroutine and save return address on stack
         """
         self._state.push(self._state.pc)
-        self._state.pc += 3
+        self._state.pc += 2
         self._state.pc = address
 
     def rts(self):

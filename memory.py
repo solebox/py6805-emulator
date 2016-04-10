@@ -2,6 +2,7 @@ import inspect
 import random
 import struct
 
+
 class Memory(object):
 
     def __init__(self):
@@ -11,37 +12,38 @@ class Memory(object):
         self._memory = {}
 
     def write_buffer_to_memory(self, start_address, buffer):
-        if type(start_address) == bytes:
-            address = struct.unpack(">H", start_address)[0] # big endian 2 bytes address
-        elif type(start_address) == str:
-            address = int(start_address, 16)
-        elif type(start_address) == int:
-            address = start_address
-        else:
-            raise ValueError("invalid address format")
 
+        address = start_address
         for value in buffer:
             self.write(address, value)
             address += 1
 
-    def read(self, address):
+    def read(self, read_address):
+        address = self._convert_address(read_address)
         value = self._memory.get(address, 0)
         return value
 
-    def write(self, address, value):
+    def write(self, write_address, value):
+        address = self._convert_address(write_address)
         self._memory[address] = value
 
-    def negate(self, address):
-        pass  # fixme - implement please
-
-    def clear_location(self, address):
-        self._memory[address] = 0x00
-
-    def increment(self, address):
-        self._memory[address] += 1
-
-    def decrement(self, address):
-        self._memory[address] -= 1
+    def _convert_address(self, original_address):
+        """
+        converts address that comes in few different formats into int
+        accepts bytes, string and int
+        :param original_address: int/bytes/string address representation
+        :return: int address representation
+        :throws: ValueError - if invalid address format
+        """
+        if type(original_address) == bytes:
+            address = struct.unpack(">H", original_address)[0]  # big endian 2 bytes address
+        elif type(original_address) == str:
+            address = int(original_address, 16)
+        elif type(original_address) == int:
+            address = original_address
+        else:
+            raise ValueError("invalid address format")
+        return address
 
 
 class Metalog(type):
@@ -69,7 +71,6 @@ class Stack(object):
 
             this is our stack , its supposed to be circular , hardware controlled and it grows downwards.
         """
-        # fixme - make the stack circular
         self._stack_size = size
         self._stack_top = start
         self._stack_bottom = self._stack_top - self._stack_size + 1
