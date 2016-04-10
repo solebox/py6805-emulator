@@ -32,7 +32,7 @@ class OpCodeParser(object):
         hex_encoded_arguments = []
         for argument_size in argument_sizes:
             argument = b''
-            for byte_address in range(pc, argument_size + 1):
+            for byte_address in range(pc, pc+argument_size):
                 argument += struct.pack('B', self._memory.read(byte_address))
             argument = self._unpack_argument(argument)
             hex_encoded_arguments.append(hex(argument))
@@ -61,6 +61,7 @@ class OpCodeParser(object):
             result = ord(argument[0]) if argument_bytesize > 1 else ord(argument)
             for index in range(argument_bytesize):
                 result += 255*ord(argument[index])*index
+
         return result
 
     def _parse_opcode(self, opcode):
@@ -90,10 +91,14 @@ if __name__ == "__main__":
     registers = Registers()
     memory = Memory()
     commands = Commands(registers, memory)
-    rom = b"\xfb\x02\x9d"
+    rom = b"\xfb\x02\xfb\x02\xf0\x02\x46"
     opcode_parser = OpCodeParser(rom, commands, memory, registers)
 
     print(registers)
     opcode_parser.step(fake=False)
     opcode_parser.step(fake=False)
+    opcode_parser.step(fake=False)
+    opcode_parser.step(fake=False)
+    opcode_parser.step(fake=False)
+
     print(registers)

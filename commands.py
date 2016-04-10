@@ -74,10 +74,6 @@ class Commands(object):
         """
         bits_in_general_reg = len(bin(self._state.general_register_size)) - 2
         result = (self._state.a - value) % (self._state.general_register_size+1)
-        print("result: {}".format(result))
-        # negative = 1 if result >> (bits_in_general_reg - 1) else 0
-        # zero = 0 if result else 1
-        # carry = 1 if result > self._state.a else 0
         flags = self._get_flag_change(value, result, "underflow")
         negative, zero, carry = flags['N'], flags['Z'], flags['C']
         self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})

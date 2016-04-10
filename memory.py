@@ -20,7 +20,7 @@ class Memory(object):
 
     def read(self, read_address):
         address = self._convert_address(read_address)
-        value = self._memory.get(address, 0)
+        value = self._memory.get(address, 0x9d)
         return value
 
     def write(self, write_address, value):
