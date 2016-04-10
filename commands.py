@@ -693,7 +693,7 @@ class Commands(object):
         """
             branch never ( another nop? )
         """
-        # fixme wtf
+        # todo - is this another nop?
         self._state.pc += 2
 
     def bsr(self, address_offset):
@@ -775,7 +775,14 @@ class Commands(object):
         """
             RTI pull registers from stack and return from interrupt
         """
-        # todo - meh
+        ccr = self._state.pop()
+        a = self._state.pop()
+        x = self._state.pop()
+        pc = self._state.pop()  # fixme - PCL PCH (does it matter if its all hardware?)
+        self._state.update_flags(ccr)
+        self._state.a = a
+        self._state.x = x
+        self._state.pc = pc
 
     # misc control
     def clc(self):
@@ -810,7 +817,14 @@ class Commands(object):
         """
             SWI software initiated interrupt
         """
-        # fixme - wat
+        ccr = self._state.ccr
+        a = self._state.a
+        x = self._state.x
+        pc = self._state.pc
+        self._state.push(pc) # fixme - PCL PCH (does it matter if its all hardware?)
+        self._state.push(x)
+        self._state.push(a)
+        self._state.push(ccr)
 
     def rsp(self):
         """
