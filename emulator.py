@@ -78,7 +78,7 @@ class OpCodeParser(object):
         with open(opcode_map_file) as input_file:
             lines = input_file.readlines()
             for line in lines:
-                if re.match(r"^\n$", line):
+                if re.match(r"^\s*\n$", line) or re.match(r"^\/\/.*$", line):
                     continue
                 line = line.rstrip("\n")
                 line = re.sub("\s+$", "", line)

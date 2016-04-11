@@ -12,14 +12,25 @@ ADD   ,0xDB ,2 // IX2 ee ff
 ADD   ,0xEB ,1 // IX1 ff
 ADD   ,0xFB ,0 // IX
 
-AND   ,0xF4 ,1
+AND   ,0xA4 ,1 // IMM ii - immidiate value woot
+AND   ,0xB4 ,1 // DIR dd - direct addressing 
+AND   ,0xC4 ,2 // EXT hh ll 
+AND   ,0xD4 ,2 // IX2 ee ff
+AND   ,0xE4 ,1 // IX1 ff
+AND   ,0xF4 ,0 // IX
 
-ASL   ,0x78 ,1
-ASLA  ,0x48 ,0
-ASLX  ,0x58 ,0
-ASR   ,0x77 ,1
-ASRA  ,0x47 ,0
-ASRX  ,0x57 ,0
+ASL   ,0x38 ,1 // DIR dd
+ASLA  ,0x48 ,0 // INH
+ASLX  ,0x58 ,0 // INH
+ASL   ,0x68 ,1 // IX1 ff
+ASL   ,0x78 ,0 // IX 
+
+ASR   ,0x37 ,1 // DIR dd
+ASRA  ,0x47 ,0 // INH
+ASRX  ,0x57 ,0 // INH
+ASR   ,0x67 ,1 // IX1 ff 
+ASR   ,0x77 ,0 // IX
+//
 BCC   ,0x14 ,1
 BCLR  ,0x11 ,1
 BCLR ,0x13 ,1
