@@ -78,6 +78,8 @@ class OpCodeParser(object):
         with open(opcode_map_file) as input_file:
             lines = input_file.readlines()
             for line in lines:
+                if re.match(r"^\n$", line):
+                    continue
                 line = line.rstrip("\n")
                 line = re.sub("\s+$", "", line)
                 line = re.sub(r"\/\/.+$", "", line)  # support for comments, fuck yea!
@@ -95,13 +97,13 @@ if __name__ == "__main__":
     registers = Registers()
     memory = Memory()
     commands = Commands(registers, memory)
-    rom = b"\xfb\x20"
+    rom = b"\xa9\x05"
     opcode_parser = OpCodeParser(rom, commands, memory, registers)
 
     print(registers)
     opcode_parser.step(fake=False)
-    opcode_parser.step(fake=False)
-    opcode_parser.step(fake=False)
-    opcode_parser.step(fake=False)
-    opcode_parser.step(fake=False)
+    # opcode_parser.step(fake=False)
+    # opcode_parser.step(fake=False)
+    # opcode_parser.step(fake=False)
+    # opcode_parser.step(fake=False)
     print(registers)

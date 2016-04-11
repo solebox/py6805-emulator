@@ -17,7 +17,7 @@ class Commands(object):
             self.logical_and(*args)
         elif command in ['bset', 'bclr', 'brset', 'brclear', 'jsr', 'jmp', 'adc', 'add']:
             method = getattr(self, command)
-            method(opcode, *args)
+            method(int(opcode, 16), *args)
         else:
             method = getattr(self, command)
             method(*args)
@@ -51,33 +51,89 @@ class Commands(object):
              carry = 1 if after < before else 0
         return {'N': negative, 'Z': zero, 'C': carry}
 
-    def add(self, value):
+    def _add(self, value):
         """
             add to accumulator
         """
         self.__update_flags_for_add_op(self._state.a, value)
-
         self._state.a = (self._state.a + value) % (self._state.general_register_size+1)
-        self._state.pc += 2
 
-    def adc(self, value):
+    def add(self, opcode, value):
+
+        if opcode == 0xAB:  # IMM ii
+            self._state.pc += 2
+        if opcode == 0xBB:  # DIR dd
+            value = self._memory.read(value)
+            self._state.pc += 2
+        if opcode == 0xCB:  # EXT hh kk
+            value = self._memory.read(value)
+            self._state.pc += 3
+        if opcode == 0xDB:  # IX2 ee ff
+            effective_address = value + self._state.x
+            value = self._memory.read(effective_address)
+            self._state.pc += 3
+        if opcode == 0xEB:  # IX1 ff
+            effective_address = value + self._state.x
+            value = self._memory.read(effective_address)
+            self._state.pc += 2
+        if opcode == 0xFB:  # IX
+            value = self._memory.read(self._state.x)
+            self._state.pc += 1
+
+        self._add(value)
+
+    def adc(self, opcode, value=None):
         """
             add to the accumulator with carry
         """
-        self.add(self._state.ccr.get('C'))
-        self.add(value)
-        self._state.pc -= 2  # compansating for the double add call (what a hack ;))
+        carry = self._state.ccr.get('C')
+        self._add(carry)
 
-    def sub(self, value):
-        """
-            subtract from accumulator
-        """
+        if opcode == 0xA9:  # IMM ii
+            self._add(value)
+            self._state.pc += 2
+
+        if opcode == 0xB9:  #DIR dd - direct addressing
+            value = self._memory.read(value)
+            self._add(value)
+            self._state.pc += 2
+
+        if opcode == 0xC9:  # EXT hh ll - extended direct addressing
+            value = self._memory.read(value)
+            self._add(value)  # pc += 2 inside
+            self._state.pc += 3 # one more because we have an extra byte in ext
+
+        if opcode == 0xD9:  # IX2 ee ff - indexed 16 bit
+            effective_address = self._state.x + value
+            value = self._memory.read(effective_address)
+            self._add(value)
+            self._state.pc += 3
+
+        if opcode == 0xE9:  # IX1 ff - indexed 8 bit
+            effective_address = self._state.x + value
+            value = self._memory.read(effective_address)
+            self._add(value)
+            self._state.pc += 2
+
+        if opcode == 0xF9:  # IX - indexed no offset
+            effective_address = self._state.x
+            value = self._memory.read(effective_address)
+            self._add(value)
+            self._state.pc += 1  # just opcode baby
+
+    def _sub(self, value):
         bits_in_general_reg = len(bin(self._state.general_register_size)) - 2
         result = (self._state.a - value) % (self._state.general_register_size+1)
         flags = self._get_flag_change(value, result, "underflow")
         negative, zero, carry = flags['N'], flags['Z'], flags['C']
         self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
         self._state.a = result
+
+    def sub(self, value):
+        """
+            subtract from accumulator
+        """
+        self._sub(value)
         self._state.pc += 2
 
     def sbc(self, value):
@@ -85,9 +141,9 @@ class Commands(object):
             suntract from accumulator with borrow
         """
         current_carry = self._state.ccr.get('C')
-        self.sub(value)
-        self.sub(current_carry)
-        self._state.pc -= 2  # compensating for double sub call
+        self._sub(value)
+        self._sub(current_carry)
+        self._state.pc += 2  # compensating for double sub call
 
     def mul(self):
         """

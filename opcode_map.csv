@@ -1,6 +1,19 @@
-ADC   ,0xF9 ,1
-ADD   ,0xFB ,1
+ADC   ,0xA9 ,1 // IMM ii
+ADC   ,0xB9 ,1 // DIR dd - direct addressing 
+ADC   ,0xC9 ,2 // EXT hh ll - extended direct addressing
+ADC   ,0xD9 ,2 // IX2 ee ff - indexed 16 bit
+ADC   ,0xE9 ,1 // IX1 ff - indexed 8 bit
+ADC   ,0xF9 ,0 // IX - indexed no offset
+
+ADD   ,0xAB ,1 // IMM ii - immidiate value woot
+ADD   ,0xBB ,1 // DIR dd - direct addressing 
+ADD   ,0xCB ,2 // EXT hh ll 
+ADD   ,0xDB ,2 // IX2 ee ff
+ADD   ,0xEB ,1 // IX1 ff
+ADD   ,0xFB ,0 // IX
+
 AND   ,0xF4 ,1
+
 ASL   ,0x78 ,1
 ASLA  ,0x48 ,0
 ASLX  ,0x58 ,0
