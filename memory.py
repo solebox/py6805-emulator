@@ -11,6 +11,16 @@ class Memory(object):
         self.address_size = 0xFFFF
         self._memory = {}
 
+    def __str__(self):
+        result = ""
+        for address, value in self._memory.items():
+            result += "{0:#06X}: {1:#04X}\n".format(address, value)
+        return str(result)
+
+    def __next__(self):
+        for address, value in self._memory.items():
+            yield "{0:#06X}: {1:#04X}\n".format(address, value)
+
     def write_buffer_to_memory(self, start_address, buffer):
 
         address = start_address
