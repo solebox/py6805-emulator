@@ -104,5 +104,4 @@ if __name__ == "__main__":
     opcode_parser.step(fake=False)
     opcode_parser.step(fake=False)
     opcode_parser.step(fake=False)
-
     print(registers)

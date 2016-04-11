@@ -10,6 +10,10 @@ class Memory(object):
         self._rom = range(0x100, )
         self.address_size = 0xFFFF
         self._memory = {}
+        self._mem_gen = None
+
+    def __iter__(self):
+        return self
 
     def __str__(self):
         result = ""
@@ -18,6 +22,17 @@ class Memory(object):
         return str(result)
 
     def __next__(self):
+        if self._mem_gen == None:
+            self._mem_gen = self.next()
+        try:
+            return_value = next(self._mem_gen)
+        except StopIteration as stop_iter:
+            self._mem_gen = self.next()
+            raise stop_iter
+
+        return next(self._mem_gen)
+
+    def next(self):
         for address, value in self._memory.items():
             yield "{0:#06X}: {1:#04X}\n".format(address, value)
 

@@ -77,7 +77,11 @@ EOR   ,0xF8 ,1
 INC   ,0x7C ,1
 INCA  ,0x4C ,0
 INCX  ,0x5C ,0
-JMP   ,0xFC ,1
+JMP   ,0xFC ,0 // IX 
+JMP   ,0xBC ,1 // DIR dd
+JMP   ,0xCC ,2 // EXT hh ll
+JMP   ,0xDC ,2 // IX2 ee ff indexed 16
+JMP   ,0xEC ,1 // IX1 ff
 JSR   ,0xBD ,1 // DIR dd    direct mode
 JSR   ,0xCD ,2 // EXT hh ll extended mode
 JSR   ,0xDD ,2 // IX2 ee ff Indexed, 16-bit offset addressing mode

@@ -15,7 +15,7 @@ class Commands(object):
         command = command.lower()
         if command == 'and':
             self.logical_and(*args)
-        elif command in ['bset', 'bclr', 'brset', 'brclear', 'jsr']:
+        elif command in ['bset', 'bclr', 'brset', 'brclear', 'jsr', 'jmp', 'adc', 'add']:
             method = getattr(self, command)
             method(opcode, *args)
         else:
@@ -746,20 +746,59 @@ class Commands(object):
         self._state.pc = address
 
     # jumps and returns
-    def jmp(self, address):
+    def jmp(self, opcode, address=0x00):
         """
             JMP jumpt to specified address
         """
-        self._state.pc += 2  # one byte for the jmp and another 2 bytes for the address
-        self._state.pc = address
 
-    def jsr(self, opcode, address):
+        self._state.push(self._state.pc) # save the return address hun , its dangerous outside ;)
+
+        if opcode == 0xfc:  # indexed no offser (first bytes is 0x00 second is from the index reg)
+            self._state.pc += 1 # just the instruction , no params
+            self._state.pc = self._state.x
+
+        if opcode == 0xec:  # indexed 8bit offset (
+            self._state.pc += 2  # opcode + rel (i know it doesnt matter but i used em for ref - dont judge me :))
+            effective_address = self._state.x + address # index reg plus the following byte (both unsigned) (can access up to 0x01fe) looks legit
+            self._state.pc = effective_address
+
+        if opcode == 0xdc:  # Indexed, 16-bit offset addressing mode
+            self._state.pc += 3
+            effective_address = self._state.x + address  # this offset is 2 bytes in size not one , dont be fooled
+            self._state.pc = effective_address
+
+        if opcode == 0xcc:  # this is extended mode
+            self._state.pc += 3
+            self._state.pc = address  # 2 bytes, simply go there biach
+
+        if opcode == 0xbc:  # direct
+            self._state.pc += 2
+            self._state.pc = address
+
+
+    def jsr(self, opcode, address=0x00):
         """
             JSR jump to subroutine and save return address on stack
         """
-        self._state.pc += 2 # fixme - address can be n = 1,2,3
-        self._state.push(self._state.pc)
-        self._state.pc = address
+        self._state.push(self._state.pc) # save the return address hun , its dangerous outside ;)
+
+        if opcode == 0xfd:  # indexed no offser (first bytes is 0x00 second is from the index reg)
+            self._state.pc += 1 # just the instruction , no params
+            self._state.pc = self._state.x
+        if opcode == 0xed:  # indexed 8bit offset (
+            self._state.pc += 2  # opcode + rel (i know it doesnt matter but i used em for ref - dont judge me :))
+            effective_address = self._state.x + address # index reg plus the following byte (both unsigned) (can access up to 0x01fe) looks legit
+            self._state.pc = effective_address
+        if opcode == 0xdd:  # Indexed, 16-bit offset addressing mode
+            self._state.pc += 3
+            effective_address = self._state.x + address  # this offset is 2 bytes in size not one , dont be fooled
+            self._state.pc = effective_address
+        if opcode == 0xcd:  # this is extended mode
+            self._state.pc += 3
+            self._state.pc = address  # 2 bytes, simply go there biach
+        if opcode == 0xbd:  # direct
+            self._state.pc += 2
+            self._state.pc = address
 
     def rts(self):
         """
