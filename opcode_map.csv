@@ -30,8 +30,9 @@ ASRA  ,0x47 ,0 // INH
 ASRX  ,0x57 ,0 // INH
 ASR   ,0x67 ,1 // IX1 ff 
 ASR   ,0x77 ,0 // IX
-//
-BCC   ,0x14 ,1
+
+BCC   ,0x24 ,1
+
 BCLR  ,0x11 ,1
 BCLR ,0x13 ,1
 BCLR ,0x15 ,1
@@ -40,24 +41,33 @@ BCLR ,0x19 ,1
 BCLR ,0x1B ,1
 BCLR ,0x1D ,1
 BCLR ,0x1F ,1
-BCS   ,0x15 ,1
-BEQ   ,0x17 ,1
-BHCC  ,0x18 ,1
-BHCS  ,0x19 ,1
-BHI   ,0x11 ,1
-BHS   ,0x14 ,1
-BIH   ,0x1F ,1
-BIL   ,0x1E ,1
-BIT   ,0xF5 ,0
-BLO   ,0x15 ,1
-BLS   ,0x13 ,1
-BMC   ,0x1C ,1
-BMI   ,0x1B ,1
-BMS   ,0x1D ,1
-BNE   ,0x16 ,1
-BPL   ,0x1A ,1
-BRA   ,0x10 ,1
-BRN   ,0x11 ,1
+
+BCS   ,0x25 ,1
+BEQ   ,0x27 ,1
+BHCC  ,0x28 ,1
+BHCS  ,0x29 ,1
+BHI   ,0x21 ,1
+BHS   ,0x24 ,1
+BIH   ,0x2F ,1
+BIL   ,0x2E ,1
+
+BIT   ,0xA5 ,1 // IMM ii
+BIT   ,0xB5 ,1 // DIR dd
+BIT   ,0xC5 ,2 // EXT hh ll
+BIT   ,0xD5 ,2 // IX2 ee ff
+BIT   ,0xE5 ,1 // IX1 ff
+BIT   ,0xF5 ,0 // IX
+
+BLO   ,0x25 ,1
+BLS   ,0x23 ,1
+BMC   ,0x2C ,1
+BMI   ,0x2B ,1
+BMS   ,0x2D ,1
+BNE   ,0x26 ,1
+BPL   ,0x2A ,1
+BRA   ,0x20 ,1
+BRN   ,0x21 ,1
+
 BRCLR ,0x01 ,1|1
 BRCLR ,0x03 ,1|1
 BRCLR ,0x05 ,1|1
@@ -66,6 +76,7 @@ BRCLR ,0x09 ,1|1
 BRCLR ,0x0B ,1|1
 BRCLR ,0x0D ,1|1
 BRCLR ,0x0F ,1|1
+
 BRSET ,0x00 ,1|1
 BRSET ,0x02 ,1|1
 BRSET ,0x04 ,1|1
@@ -74,7 +85,7 @@ BRSET ,0x08 ,1|1
 BRSET ,0x0A ,1|1
 BRSET ,0x0C ,1|1
 BRSET ,0x0E ,1|1
-BSET  ,0x10 ,1
+
 BSET ,0x10 ,1
 BSET ,0x12 ,1
 BSET ,0x14 ,1
@@ -83,65 +94,164 @@ BSET ,0x18 ,1
 BSET ,0x1A ,1
 BSET ,0x1C ,1
 BSET ,0x1E ,1
+
 BSR   ,0xAD ,1
 CLC   ,0x98 ,0
 CLI   ,0x9A ,0
-CLR   ,0x7F ,1
-CLRA  ,0x4F ,0
-CLRX  ,0x5F ,0
-CMP   ,0xF1 ,1
-COM   ,0x73 ,1
-COMA  ,0x43 ,0
-COMX  ,0x43 ,0
-CPX   ,0xF3 ,1
-DEC   ,0x7A ,1
-DECA  ,0x4A ,0
-DECX  ,0x5A ,0
-EOR   ,0xF8 ,1
-INC   ,0x7C ,1
-INCA  ,0x4C ,0
-INCX  ,0x5C ,0
-JMP   ,0xFC ,0 // IX 
+
+CLR   ,0x3F ,1 // DIR dd
+CLRA  ,0x4F ,0 // INH 
+CLRX  ,0x5F ,0 // INH
+CLR   ,0x6F ,1 // IX1 ff
+CLR   ,0x7F ,0 // IX
+
+CMP   ,0xA1 ,1 // IMM ii
+CMP   ,0xB1 ,1 // DIR dd
+CMP   ,0xC1 ,2 // EXT hh ll
+CMP   ,0xD1 ,2 // IX2 ee ff
+CMP   ,0xE1 ,1 // IX1 ff
+CMP   ,0xF1 ,0 // IX
+
+COM   ,0x33 ,1 //DIR dd
+COMA  ,0x43 ,0 // INH
+COMX  ,0x53 ,0 // INH
+COM   ,0x63 ,1 // IX1
+COM   ,0x73 ,0 //IX
+
+CPX   ,0xA3 ,1 // IMM ii
+CPX   ,0xB3 ,1 // DIR dd
+CPX   ,0xC3 ,2 // EXT hh ll
+CPX   ,0xD3 ,2 // IX2 ee ff
+CPX   ,0xE3 ,1 // IX1 ff
+CPX   ,0xF3 ,0 // IX
+
+DEC   ,0x3A ,1 // DIR dd
+DECA  ,0x4A ,0 // INH
+DECX  ,0x5A ,0 // INH
+DEC   ,0x6A ,1 // IX1 ff
+DEC   ,0x7A ,0 // IX
+
+EOR   ,0xA8 ,1 // IMM ii
+EOR   ,0xB8 ,1 // DIR dd
+EOR   ,0xC8 ,2 // EXT hh ll
+EOR   ,0xD8 ,2 // IX2 ee ff
+EOR   ,0xE8 ,1 // IX1 ff
+EOR   ,0xF8 ,0 // IX
+
+INC   ,0x3C ,1 // DIR dd
+INCA  ,0x4C ,0 // INH
+INCX  ,0x5C ,0 // INH
+INC   ,0x6C ,1 // IX1 ff
+INC   ,0x7C ,0 // IX
+
 JMP   ,0xBC ,1 // DIR dd
 JMP   ,0xCC ,2 // EXT hh ll
 JMP   ,0xDC ,2 // IX2 ee ff indexed 16
 JMP   ,0xEC ,1 // IX1 ff
+JMP   ,0xFC ,0 // IX 
+
 JSR   ,0xBD ,1 // DIR dd    direct mode
 JSR   ,0xCD ,2 // EXT hh ll extended mode
 JSR   ,0xDD ,2 // IX2 ee ff Indexed, 16-bit offset addressing mode
 JSR   ,0xED ,1 // IX1 ff    Indexed, 8-bit offset addressing mode
 JSR   ,0xFD ,0 // IX        Indexed, no offset addressing mode          
-LDA   ,0xF6 ,1
-LDX   ,0xFE ,1
-LSL   ,0x78 ,1
-LSLA  ,0x48 ,0
-LSLX  ,0x58 ,0
-LSR   ,0x74 ,1
-LSRA  ,0x44 ,0
-LSRX  ,0x54 ,0
-NEG   ,0x70 ,1
-NEGA  ,0x40 ,0
-NEGX  ,0x50 ,0
+
+LDA   ,0xA6 ,1 // IMM ii
+LDA   ,0xB6 ,1 // DIR dd
+LDA   ,0xC6 ,2 // EXT hh ll
+LDA   ,0xD6 ,2 // IX2 ee ff
+LDA   ,0xE6 ,1 // IX1 ff
+LDA   ,0xF6 ,1 // IX
+
+LDX   ,0xAE ,1 // IMM ii
+LDX   ,0xBE ,1 // DIR dd
+LDX   ,0xCE ,2 // EXT hh ll
+LDX   ,0xDE ,2 // IX2 ee ff
+LDX   ,0xEE ,1 // IX1 ff
+LDX   ,0xFE ,1 // IX
+
+LSL   ,0x38 ,1 // DIR dd
+LSLA  ,0x48 ,0 // INH
+LSLX  ,0x58 ,0 // INH
+LSL   ,0x68 ,1 // IX1 ff
+LSL   ,0x78 ,0 // IX
+
+LSR   ,0x34 ,1 // DIR dd
+LSRA  ,0x44 ,0 // INH
+LSRX  ,0x54 ,0 // INH
+LSR   ,0x64 ,1 // IX1 ff
+LSR   ,0x74 ,0 // IX
+
+NEG   ,0x30 ,1 // DIR dd
+NEGA  ,0x40 ,0 // INH
+NEGX  ,0x50 ,0 // INH
+NEG   ,0x60 ,1 // IX1 ff
+NEG   ,0x70 ,1 // IX
+
 NOP   ,0x9D ,0
-ORA   ,0xFA ,1
-ROL   ,0x79 ,1
-ROLA  ,0x49 ,0
-ROLX  ,0x59 ,0
-ROR   ,0x76 ,1
-RORA  ,0x46 ,0
-RORX  ,0x56 ,0
+
+ORA   ,0xAA ,1 // IMM ii
+ORA   ,0xBA ,1 // DIR dd
+ORA   ,0xCA ,2 // EXT hh ll
+ORA   ,0xDA ,2 // IX2 ee ff
+ORA   ,0xEA ,1 // IX1 ff
+ORA   ,0xFA ,0 // IX
+
+ROL   ,0x39 ,1 // DIR dd
+ROLA  ,0x49 ,0 // INH
+ROLX  ,0x59 ,0 // INH
+ROL   ,0x69 ,1 // IX1 ff
+ROL   ,0x79 ,0 // IX
+
+ROR   ,0x36 ,1 // DIR dd
+RORA  ,0x46 ,0 // INH
+RORX  ,0x56 ,0 // INH
+ROR   ,0x66 ,1 // IX1 ff
+ROR   ,0x76 ,0 // IX
+
 RSP   ,0x9C ,0
 RTI   ,0x80 ,0
 RTS   ,0x81 ,0
-SBC   ,0xF1 ,1
+
+SBC   ,0xA2 ,1 // IMM ii
+SBC   ,0xB2 ,1 // DIR dd
+SBC   ,0xC2 ,2 // EXT hh ll
+SBC   ,0xD2 ,2 // IX2 ee ff
+SBC   ,0xE2 ,1 // IX1 ff
+SBC   ,0xF2 ,0 // IX
+
 SEC   ,0x99 ,0
 SEI   ,0x9B ,0
-STA   ,0xF7 ,1
-STX   ,0xFF ,1
-SUB   ,0xF0 ,1
-SWI   ,0x83 ,0
-TAX   ,0x97 ,0
-TST   ,0x7D ,1
-TSTA  ,0x4D ,0
-TSTX  ,0x5D ,0
-TXA   ,0x9F ,0
+
+STA   ,0xB7 ,1 // DIR dd
+STA   ,0xC7 ,2 // EXT hh ll
+STA   ,0xD7 ,2 // IX2 ee ff
+STA   ,0xE7 ,1 // IX1 ff
+STA   ,0xF7 ,0 // IX
+
+STOP  ,0x8E ,0 //INH
+
+STX   ,0xBF ,1 // DIR dd
+STX   ,0xCF ,2 // EXT hh ll
+STX   ,0xDF ,2 // IX2 ee ff
+STX   ,0xEF ,1 // IX1 ff
+STX   ,0xFF ,0 // IX
+
+SUB   ,0xA0 ,1 // IMM ii
+SUB   ,0xB0 ,1 // DIR dd
+SUB   ,0xC0 ,2 // EXT hh ll
+SUB   ,0xD0 ,2 // IX2 ee ff
+SUB   ,0xE0 ,1 // IX1 ff
+SUB   ,0xF0 ,0 // IX
+
+SWI   ,0x83 ,0 //INH
+TAX   ,0x97 ,0 //INH
+
+TST   ,0x3D ,1 // DIR dd
+TSTA  ,0x4D ,0 // INH
+TSTX  ,0x5D ,0 // INH
+TST   ,0x6D ,1 // IX1 ff
+TST   ,0x7D ,0 // IX
+
+TXA   ,0x9F ,0 //INH
+WAIT  ,0x8F ,0 //INH
