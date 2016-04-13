@@ -255,3 +255,46 @@ TST   ,0x7D ,0 // IX
 
 TXA   ,0x9F ,0 //INH
 WAIT  ,0x8F ,0 //INH
+
+// IX - Indexed instructions with no offset are 1-byte instructions that can access data with variable addresses
+//      within the first 256 memory locations. The index register contains the low byte of the effective address of
+//      the operand. The CPU automatically uses $00 as the high byte, so these instructions can address
+//      locations $0000–$00FF.
+//      Indexed, no offset instructions are often used to move a pointer through a table or to hold the address of
+//      a frequently used random-access memory (RAM) or input/output (I/O) locatio
+// IX1 - Indexed, 8-bit offset instructions are 2-byte instructions that can access data with variable addresses
+//      within the first 511 memory locations. The CPU adds the unsigned byte in the index register to the
+//      unsigned byte following the opcode. The sum is the effective address of the operand. These instructions
+//      can access locations $0000–$01FE.
+//      Indexed 8-bit offset instructions are useful for selecting the kth element in an n-element table. The table
+//      can begin anywhere within the first 256 memory locations and could extend as far as location 510
+//      ($01FE). The k value is typically in the index register, and the address of the beginning of the table is in
+//      the byte following the opcode.
+// IX2 - Indexed, 16-bit offset instructions are 3-byte instructions that can access data with variable addresses at
+//      any location in memory. The CPU adds the unsigned byte in the index register to the two unsigned bytes
+//      following the opcode. The sum is the effective address of the operand. The first byte after the opcode is
+//      the high byte of the 16-bit offset; the second byte is the low byte of the offset.
+//      Indexed, 16-bit offset instructions are useful for selecting the kth element in an n-element table anywhere
+//      in memory.
+//      As with direct and extended addressing, the Freescale assembler determines the shortest form of
+//      indexed addressing.
+// REL - Relative addressing is only for branch instructions. If the branch condition is true, the CPU finds the
+//       effective branch destination by adding the signed byte following the opcode to the contents of the program
+//       counter. If the branch condition is not true, the CPU goes to the next instruction. The offset is a signed,
+//       two’s complement byte that gives a branching range of –128 to +127 bytes from the address of the next
+//       location after the branch instruction.
+//       When using the Freescale assembler, the programmer does not need to calculate the offset, because the
+//       assembler determines the proper offset and verifies that it is within the span of the branch.
+// EXT - Extended instructions use three bytes and can access any address in memory. The first byte is the
+//       opcode; the second and third bytes are the high and low bytes of the operand address.
+//       When using the Freescale assembler, the programmer does not need to specify whether an instruction is
+//       direct or extended. The assembler automatically selects the shortest form of the instruction.
+// IMM - Immediate instructions are those that contain a value to be used in an operation with the value in the
+//       accumulator or index register. Immediate instructions require no operand address and are two bytes long.
+//       The opcode is the first byte, and the immediate data value is the second byte.
+// INH - Inherent instructions are those that have no operand, such as return from interrupt (RTI) and stop (STOP).
+//       Some of the inherent instructions act on data in the CPU registers, such as set carry flag (SEC) and
+//       increment accumulator (INCA). Inherent instructions require no operand address and are one byte long.
+// DIR - Direct instructions can access any of the first 256 memory locations with two bytes. The first byte is the
+//       opcode, and the second is the low byte of the operand address. In direct addressing, the CPU
+//       automatically uses $00 as the high byte of the operand address.
