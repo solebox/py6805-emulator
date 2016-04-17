@@ -46,6 +46,9 @@ class OpCodeParser(object):
             print(message)
         else:
             self._commands.execute_command(opcode, mnemon, *arguments)
+            if self._state.are_there_any_hardware_interruprs():
+                interrupt = self._state.dequeue_hardware_interrupt()
+                interrupt()
 
     def _unpack_argument(self, argument):
         argument_bytesize = len(argument)

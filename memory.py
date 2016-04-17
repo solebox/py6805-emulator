@@ -6,10 +6,22 @@ import struct
 class Memory(object):
 
     def __init__(self):
-        self._ram = range(0x0, 0x20)
-        self._rom = range(0x100, )
+        self._io_registers = range(0x0000, 0x001F)  # 32 bytes
+        self._page_zero_eprom = range(0x0020, 0x004F)  # user eprom 48 bytes
+        self._heap = range(0x0050, 0x00C0)    # heap + stack = ram
+        self._stack = range(0x00C0, 0x00FF)
+        self._eprom = range(0x1000, 0x3EFF)
+        self._user_vectors = range(0x3FF4, 0x3FFF)
+        self._mark_option_registers = (0xFF0, 0xFF1)
+        self._unused = range(0x0100, 0x0FFF)
+
+        self._rom = range(0x3F00,0x3FEF)
+        self._reset_interrupt = range(0x3FFE, 0x3FFF)
+        self._software_interrupt = range(0x3FFC, 0x3FFD)
+        self._external_interrupt_vector = range(0x3FA, )
         self.address_size = 0xFFFF
         self._memory = {}
+
         self._mem_gen = None
 
     def __iter__(self):
@@ -128,6 +140,12 @@ class Stack(object):
         value = self._get_pop_val()
         self._sp += 1
         return value
+
+    def push_state(self):
+        pass
+
+    def pop_state(self):
+        pass
 
     def reset_stack_pointer(self, address):
         self.sp = address

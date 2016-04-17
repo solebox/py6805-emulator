@@ -12,6 +12,17 @@ class Registers(object):
         self._CCR = {'C': 0, 'Z': 0, 'N': 0, 'I': 0, 'H': 0, 5: 1, 6: 1, 7: 1}
         self._stack = Stack(size=64, start=0x00FF)  # fixme find out real specs of stack
         self._sp = self._stack.sp
+        self._hardware_interrupt_queue = []
+
+    def enqueue_hardware_interrupt(self, interrupt):
+        self._hardware_interrupt_queue.push(interrupt)
+
+    def dequeue_hardware_interrupt(self):
+        interrupt = self._hardware_interrupt_queue.pop(0)
+        return interrupt
+
+    def are_there_any_hardware_interruprs(self):
+        return len(self._hardware_interrupt_queue) > 0
 
     def __str__(self):
         flags = {'C': self._CCR['C'], 'Z': self._CCR['Z'], 'N': self._CCR['N'], 'I': self._CCR['I'], 'H': self._CCR['H']}

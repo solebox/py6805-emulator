@@ -9,7 +9,7 @@ class Commands(object):
         self._memory = memory
         self._address_size = self._memory.address_size
         self._register_size = self._state.general_register_size     # assuming opcode size and rgeneral
-                                                                    #  register size are always the same
+        #  register size are always the same
 
     def execute_command(self, opcode, command, *args):
         command = command.lower()
@@ -46,9 +46,9 @@ class Commands(object):
         negative = 1 if after >> (bits_in_general_reg - 1) else 0
         zero = 0 if after else 1
         if wrap_type == "underflow":
-             carry = 1 if after > before else 0
+            carry = 1 if after > before else 0
         else:
-             carry = 1 if after < before else 0
+            carry = 1 if after < before else 0
         return {'N': negative, 'Z': zero, 'C': carry}
 
     def _add(self, value):
@@ -90,36 +90,32 @@ class Commands(object):
         self._add(carry)
 
         if opcode == 0xA9:  # IMM ii
-            self._add(value)
             self._state.pc += 2
 
         if opcode == 0xB9:  #DIR dd - direct addressing
             value = self._memory.read(value)
-            self._add(value)
             self._state.pc += 2
 
         if opcode == 0xC9:  # EXT hh ll - extended direct addressing
             value = self._memory.read(value)
-            self._add(value)  # pc += 2 inside
             self._state.pc += 3 # one more because we have an extra byte in ext
 
         if opcode == 0xD9:  # IX2 ee ff - indexed 16 bit
             effective_address = self._state.x + value
             value = self._memory.read(effective_address)
-            self._add(value)
             self._state.pc += 3
 
         if opcode == 0xE9:  # IX1 ff - indexed 8 bit
             effective_address = self._state.x + value
             value = self._memory.read(effective_address)
-            self._add(value)
             self._state.pc += 2
 
         if opcode == 0xF9:  # IX - indexed no offset
             effective_address = self._state.x
             value = self._memory.read(effective_address)
-            self._add(value)
             self._state.pc += 1  # just opcode baby
+
+        self._add(value)
 
     def _sub(self, value):
         bits_in_general_reg = len(bin(self._state.general_register_size)) - 2
@@ -129,28 +125,73 @@ class Commands(object):
         self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
         self._state.a = result
 
-    def sub(self, value):
+    def sub(self, opcode, value):
         """
             subtract from accumulator
         """
-        self._sub(value)
-        self._state.pc += 2
+        if opcode == 0xA0:  # IMM ii
+            self._state.pc += 2
+        if opcode == 0xB0:  # DIR dd
+            value = self._memory.read(value)
+            self._state.pc += 2
+        if opcode == 0xC0:  # EXT hh kk
+            value = self._memory.read(value)
+            self._state.pc += 3
+        if opcode == 0xD0:  # IX2 ee ff
+            effective_address = value + self._state.x
+            value = self._memory.read(effective_address)
+            self._state.pc += 3
+        if opcode == 0xE0:  # IX1 ff
+            effective_address = value + self._state.x
+            value = self._memory.read(effective_address)
+            self._state.pc += 2
+        if opcode == 0xF0:  # IX
+            value = self._memory.read(self._state.x)
+            self._state.pc += 1
 
-    def sbc(self, value):
+        self._sub(value)
+
+    def sbc(self, opcode, value):
         """
             suntract from accumulator with borrow
         """
+
+        if opcode == 0xA2:  # IMM ii
+            self._state.pc += 2
+
+        if opcode == 0xB2:  #DIR dd - direct addressing
+            value = self._memory.read(value)
+            self._state.pc += 2
+
+        if opcode == 0xC2:  # EXT hh ll - extended direct addressing
+            value = self._memory.read(value)
+            self._state.pc += 3 # one more because we have an extra byte in ext
+
+        if opcode == 0xD2:  # IX2 ee ff - indexed 16 bit
+            effective_address = self._state.x + value
+            value = self._memory.read(effective_address)
+            self._state.pc += 3
+
+        if opcode == 0xE2:  # IX1 ff - indexed 8 bit
+            effective_address = self._state.x + value
+            value = self._memory.read(effective_address)
+            self._state.pc += 2
+
+        if opcode == 0xF2:  # IX - indexed no offset
+            effective_address = self._state.x
+            value = self._memory.read(effective_address)
+            self._state.pc += 1  # just opcode baby
+
         current_carry = self._state.ccr.get('C')
         self._sub(value)
         self._sub(current_carry)
-        self._state.pc += 2  # compensating for double sub call
 
     def mul(self):
         """
             doesnt exist in 6805 microprocessor opcodes , maybe just for younger family members
             multiply the accumulator by index register (x)
         """
-        self._state.a *= self._state.x  # fixme - need to look for opcode and add flag stuff
+        self._state.a *= self._state.x  # fixme - need to look for opcode and add flag stuff (mul doesnt exist in doc)
         self._state.pc += 1
 
     def _neg(self, value):
@@ -164,14 +205,29 @@ class Commands(object):
         self._state.update_flags({'N': negative, 'Z': zero, 'C': carry})
         return result
 
-    def neg(self, address):
+    def neg(self, opcode, operand):
         """
             negate a memory location
         """
-        value = self._memory.read(address)
+        value = None
+        address = operand
+        if opcode == 0xB2:  #DIR dd - direct addressing
+            value = self._memory.read(operand)
+            self._state.pc += 2
+
+        if opcode == 0xE2:  # IX1 ff - indexed 8 bit
+            address = self._state.x + operand
+            value = self._memory.read(address)
+            self._state.pc += 2
+
+        if opcode == 0xF2:  # IX - indexed no offset
+            address = self._state.x
+            value = self._memory.read(address)
+            self._state.pc += 1  # just opcode baby
+
         value = self._neg(value)
         self._memory.write(address, value)
-        self._state.pc += 2  # one byte for the negate opcode 2 more for the address
+
 
     def nega(self):
         """
@@ -977,7 +1033,7 @@ class Commands(object):
 
         max_bits = 8
         result = (value << rotate_by % max_bits) & (2 ** max_bits - 1) | \
-               ((value & (2 ** max_bits - 1)) >> (max_bits - (rotate_by % max_bits)))
+                 ((value & (2 ** max_bits - 1)) >> (max_bits - (rotate_by % max_bits)))
         negative = 1 if result < 0 else 0
         zero = 0 if result else 1
         carry = 1 if result < value else 0
@@ -990,7 +1046,7 @@ class Commands(object):
         """
         max_bits = 8
         result = ((value & (2 ** max_bits - 1)) >> rotate_by % max_bits) | \
-               (value << (max_bits - (rotate_by % max_bits)) & (2 ** max_bits - 1))
+                 (value << (max_bits - (rotate_by % max_bits)) & (2 ** max_bits - 1))
         negative = 1 if result < 0 else 0
         zero = 0 if result else 1
         carry = 1 if result < value else 0
